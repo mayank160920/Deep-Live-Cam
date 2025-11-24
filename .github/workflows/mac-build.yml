@@ -49,7 +49,6 @@ jobs:
           --clean \
           --noconfirm \
           --add-data "models:models" \
-          --icon "media/icon.png" \
           --collect-all "insightface" \
           --collect-all "onnxruntime"
 
