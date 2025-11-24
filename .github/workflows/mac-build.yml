@@ -24,27 +24,11 @@ jobs:
 
     - name: Install Python Dependencies
       run: |
-        # 1. Update pip to avoid installation errors
         python -m pip install --upgrade pip wheel setuptools
         
-        # 2. CLEAN UP requirements.txt
-        # We remove lines asking for Windows/Nvidia versions (torch, onnxruntime)
-        # The -i '' is required for sed on macOS, but for Linux runners (GitHub Actions default) simply:
-        sed -i '/torch/d' requirements.txt
-        sed -i '/onnxruntime/d' requirements.txt
-        sed -i '/tensorflow/d' requirements.txt
-
-        # 3. Install Mac-Compatible Core Engines
-        # Install standard PyTorch (supports Mac Silicon automatically)
-        pip install torch torchvision torchaudio
-        
-        # Install CoreML support (Specific version required for M1/M2 as per DeepLiveCam docs)
-        pip install onnxruntime-silicon==1.13.1
-
-        # 4. Install the rest of the valid requirements
+        # Now we can just install directly because the file is fixed
         pip install -r requirements.txt
         
-        # 5. Install PyInstaller for building the app
         pip install pyinstaller
 
     - name: Download Models (Crucial step)
