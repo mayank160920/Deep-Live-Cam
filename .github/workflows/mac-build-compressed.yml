@@ -1,0 +1,65 @@
+name: Build Mac M1 App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' 
+        cache: 'pip'
+
+    - name: Install System Dependencies
+      run: |
+        brew install python-tk@3.10
+        brew install ffmpeg 
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip wheel setuptools
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Clean Heavy Dependencies
+      run: |
+        SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+        echo "Cleaning $SITE_PACKAGES"
+        rm -rf "$SITE_PACKAGES/torch/test"
+        rm -rf "$SITE_PACKAGES/torch/distributed"
+        rm -rf "$SITE_PACKAGES/torch/include"
+        rm -rf "$SITE_PACKAGES/cv2/data"
+        rm -rf "$SITE_PACKAGES/*/tests"
+        rm -rf "$SITE_PACKAGES/*/test"
+
+    - name: Build with PyInstaller
+      run: |
+        # Removed model bundling
+        # Added Excludes
+        pyinstaller run.py --name "DeepLiveCam" \
+          --windowed \
+          --clean \
+          --noconfirm \
+          --collect-all "insightface" \
+          --collect-all "onnxruntime" \
+          --exclude-module "matplotlib" \
+          --exclude-module "scipy" \
+          --exclude-module "doctest" \
+          --exclude-module "unittest"
+
+    - name: Create DMG
+      run: |
+        # ULMO = lzma compression (Smallest size)
+        hdiutil create -volname "DeepLiveCam" -srcfolder dist/DeepLiveCam.app -ov -format ULMO DeepLiveCam.dmg
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DeepLiveCam-M1-Build
+        path: DeepLiveCam.dmg
